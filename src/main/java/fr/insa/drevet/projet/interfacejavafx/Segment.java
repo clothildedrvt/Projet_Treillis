@@ -1,86 +1,164 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+Copyright 2000- Francois de Bertrand de Beuvron
+This file is part of CoursBeuvron.
+CoursBeuvron is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+CoursBeuvron is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with CoursBeuvron.  If not, see <http://www.gnu.org/licenses/>.
  */
 package fr.insa.drevet.projet.interfacejavafx;
 
-import java.awt.Color;
-import java.lang.Math.*;
-
+import java.io.IOException;
+import java.io.Writer;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
 
 /**
  *
- * @author dreve
+ * @author francois
  */
-public class Segment extends FigureSimple{
-    
-    //Déclaration des attributs
-    
-    private Point pointOrigine;
-    private Point pointFin;
-    
-    //Constructeur
-    
-    public Segment(Point p1, Point p2, Color couleur){
+public class Segment extends FigureSimple {
+
+    // Déclaration des attributs
+    private Point debut;
+    private Point fin;
+
+    // Création d'un constructeur
+    public Segment(Point debut, Point fin, Color couleur) {
         super(couleur);
-        this.pointOrigine = p1;
-        this.pointFin = p2;
+        this.debut = debut;
+        this.fin = fin;
     }
     
-    public Segment(Point p1,Point p2){
-        this(p1, p2, Color.black);
+    // Création d'un segment d'une certaine couleur si elle n'est pas précisée
+    public Segment(Point debut, Point fin) {
+        this(debut, fin, Color.GREENYELLOW);
     }
     
-    //Getters
-    
-    public Point getPointOrigine(){
-        return this.pointOrigine;
+    // Création d'un segment "nul"
+    private Segment() {
+        this(null, null);
+    }
+
+    // Getters
+    public Point getDebut() {
+        return debut;
+    }
+    public Point getFin() {
+        return fin;
+    }
+
+    // Setters
+    public void setDebut(Point debut) {
+        this.debut = debut;
+    }
+    public void setFin(Point fin) {
+        this.fin = fin;
     }
     
-    public Point getPointFin(){
-        return this.pointFin;
+    //Affichage
+    @Override
+    public String toString() {
+        return "[" + this.debut + "," + this.fin + ']';
     }
-    
-    //Setters
-    
-    public void setPointOrigine(Point p1){
-        this.pointOrigine = p1;
+
+    public void fromString (String ligne) throws IOException{
+        if ((ligne == null) || ligne.contains(";")){
+            throw new IOException ("Segment non conforme (" + ligne + ")");
+        }
+        else{
+            ligne.strip(); //tous les blancs sont enlevés
+            String[]tokens = ligne.split(";"); //Sépare la ligne à chaque ; pour mettre chaque partie dans la case d'un tableau
+            
+            // On vérifie si le segment a bien le bon nombre de paramètres
+            if (tokens.length <3){
+                throw new IOException("Ce Segment ne contient pas le bon nombre de paramètre (" + ligne + ")");
+            }
+            
+            // On commence à tokens[1] pour ne pas prendre en compte le commentaire en début de ligne
+            // On crée deux nouveaux points pour appeller la méthode fromString de la classe Point
+            Point p0 = new Point();
+            p0.fromString(tokens[1]);
+            Point pF = new Point();
+            pF.fromString(tokens[2]);
+        }
     }
-    
-    public void setPointFin(Point p2){
-        this.pointFin = p2;
-    }
-    
-    /*
-    Affichage
-    Segment;<Point>;<Point>
-    Exemple : Segment;(4,3);(2,8)
-    */
-    
-    public String toStringSegment(){
-        String res = "Segment;" + pointOrigine.toStringPoint() + ";" + pointFin.toStringPoint();
-        return res;
-    }
-    
-    public static Segment demandeSegment(){
+            
+    public static Segment demandeSegment() {
         System.out.println("point début : ");
-        Point debut = Point.demandePoint();
+        Point deb = Point.demandePoint();
         System.out.println("point fin : ");
         Point fin = Point.demandePoint();
-        return new Segment(debut, fin);
+        return new Segment(deb, fin);
+    }
+
+    @Override
+    public double maxX() {
+        return Math.max(this.debut.maxX(), this.fin.maxX());
+    }
+    @Override
+    public double minX() {
+        return Math.min(this.debut.minX(), this.fin.minX());
+    }
+    @Override
+    public double maxY() {
+        return Math.max(this.debut.maxY(), this.fin.maxY());
+    }
+    @Override
+    public double minY() {
+        return Math.min(this.debut.minY(), this.fin.minY());
     }
     
     @Override
-    public double maxX() {
-        return Math.max(this.pointOrigine.maxX(), this.pointFin.maxX());
+    public double distancePoint(Point p) {
+        double x1 = this.debut.getPx();
+        double y1 = this.debut.getPy();
+        double x2 = this.fin.getPx();
+        double y2 = this.fin.getPy();
+        double x3 = p.getPx();
+        double y3 = p.getPy();
+        double up = ((x3 - x1) * (x2 - x1) + (y3 - y1) * (y2 - y1))
+                / (Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        if (up < 0) {
+            return this.debut.distancePoint(p);
+        } else if (up > 1) {
+            return this.fin.distancePoint(p);
+        } else {
+            Point p4 = new Point(x1 + up * (x2 - x1),
+                    y1 + up * (y2 - y1));
+            return p4.distancePoint(p);
+        }
     }
-    
-    public static void main(String[] args) {
-        Point p1 = new Point(4,3);
-        Point p2 = new Point (2,8);
-        Segment exemple = new Segment(p1, p2);
-        System.out.println(exemple.toStringSegment());
+
+    @Override
+    public void dessine(GraphicsContext context) {
+        context.setStroke(this.getCouleur());
+        context.strokeLine(this.debut.getPx(), this.debut.getPy(), this.fin.getPx(), this.fin.getPy());
+        //comme pour le point
+    }
+
+    @Override
+    public void dessineSelection(GraphicsContext context) {
+        context.setStroke(Figure.COULEUR_SELECTION);
+        context.strokeLine(this.debut.getPx(), this.debut.getPy(), this.fin.getPx(), this.fin.getPy());
+    }
+
+    @Override
+    public void save(Writer w, Numeroteur<Figure> num) throws IOException {
+        if (!num.objExist(this)) {
+            int id = num.creeID(this);
+           // this.debut.save(w, num);
+            //this.fin.save(w, num);
+            w.append("Segment;" + id + ";" +
+                   // num.getID(this.debut) + ";" + num.getID(this.fin) +
+                    ";" + FigureSimple.saveColor(this.getCouleur())+"\n");
+        }
     }
 
 }

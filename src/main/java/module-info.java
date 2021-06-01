@@ -6,5 +6,4 @@ module treillis {
     opens fr.insa.drevet.projet.interfacejavafx to javafx.graphics;
 
     exports fr.insa.drevet.projet.interfacejavafx;
-    exports fr.insa.drevet.projet.interfacejavafx.gui;
 }
